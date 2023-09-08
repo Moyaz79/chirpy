@@ -10,48 +10,47 @@ import (
 
 type apiConfig struct {
 	fileserverHits int
-	DB 	*database.DB
+	DB             *database.DB
 }
 
 func main() {
 	const filepathRoot = "."
-	const  port = "8080"
+	const port = "8080"
 
 	db, err := database.NewDB("database.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	apiCfg := apiConfig {
+	apiCfg := apiConfig{
 		fileserverHits: 0,
-		DB: db,
+		DB:             db,
 	}
 
-	
-	r := chi.NewRouter()
+	router := chi.NewRouter()
 	fsHandler := apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
-	r.Handle("/app", fsHandler)
-	r.Handle("/app/*", fsHandler)
-	
+	router.Handle("/app", fsHandler)
+	router.Handle("/app/*", fsHandler)
+
+	apiRouter := chi.NewRouter()
+	apiRouter.Get("/healthz", readinessHandler)
+	apiRouter.Post("/chirps", apiCfg.chirpsHandlerCreate)
+	apiRouter.Get("/chirps", apiCfg.chirpsHandlerRetrieve)
+	apiRouter.Post("/users", apiCfg.createUserHandler)
+	apiRouter.Get("/chirps/{chirpID}", apiCfg.handlerChirpsGet)
+	router.Mount("/api", apiRouter)
+
 	adminRouter := chi.NewRouter()
 	adminRouter.Get("/metrics", apiCfg.metricsHandler)
-	r.Mount("/admin", adminRouter)
+	router.Mount("/admin", adminRouter)
 
-	apiRouters := chi.NewRouter()
-	apiRouters.Get("/healthz", readinessHandler)
-	apiRouters.Get("/chirps", apiCfg.chirpsHandlerRetrieve)
-	apiRouters.Post("/chirps", apiCfg.chirpsHandlerCreate)
-	r.Mount("/api", apiRouters)
+	corsMux := middlewareCors(router)
 
-	corsMux := middlewareCors(r)
-
-	server := &http.Server {
-		Addr: ":" + port,
+	srv := &http.Server{
+		Addr:    ":" + port,
 		Handler: corsMux,
 	}
 
-	log.Printf("Serving files from %s on port: %s\n",filepathRoot, port)
-	log.Fatal(server.ListenAndServe())
+	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
+	log.Fatal(srv.ListenAndServe())
 }
-
-

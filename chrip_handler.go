@@ -25,7 +25,7 @@ func (cfg *apiConfig) chirpsHandlerCreate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	cleaned, err := validateChrip(params.Body)
+	cleaned, err := validateChirp(params.Body)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
@@ -43,11 +43,12 @@ func (cfg *apiConfig) chirpsHandlerCreate(w http.ResponseWriter, r *http.Request
 	})
 }
 
-func validateChrip(body string) (string, error) {
+func validateChirp(body string) (string, error) {
 	const maxChirpLength = 140
 	if len(body) > maxChirpLength {
-		return "", errors.New("chrip is to long")
+		return "", errors.New("Chirp is too long")
 	}
+
 	badWords := map[string]struct{}{
 		"kerfuffle": {},
 		"sharbert":  {},
