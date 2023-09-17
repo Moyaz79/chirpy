@@ -1,41 +1,55 @@
 package database
 
-type User struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
+type Chirp struct {
+	ID   int    `json:"id"`
+	Body string `json:"body"`
 }
 
-func (db *DB) CreateUser(email string) (User, error) {
+func (db *DB) CreateChirp(body string) (Chirp, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
-		return User{}, err
+		return Chirp{}, err
 	}
 
-	id := len(dbStructure.Users) + 1
-	user := User{
-		ID:    id,
-		Email: email,
+	id := len(dbStructure.Chirps) + 1
+	chirp := Chirp{
+		ID:   id,
+		Body: body,
 	}
-	dbStructure.Users[id] = user
+	dbStructure.Chirps[id] = chirp
 
 	err = db.writeDB(dbStructure)
 	if err != nil {
-		return User{}, err
+		return Chirp{}, err
 	}
 
-	return user, nil
+	return chirp, nil
 }
 
-func (db *DB) GetUser(id int) (User, error) {
+func (db *DB) GetChirps() ([]Chirp, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
-		return User{}, err
+		return nil, err
 	}
 
-	user, ok := dbStructure.Users[id]
+	chirps := make([]Chirp, 0, len(dbStructure.Chirps))
+	for _, chirp := range dbStructure.Chirps {
+		chirps = append(chirps, chirp)
+	}
+
+	return chirps, nil
+}
+
+func (db *DB) GetChirp(id int) (Chirp, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return Chirp{}, err
+	}
+
+	chirp, ok := dbStructure.Chirps[id]
 	if !ok {
-		return User{}, ErrNotExist
+		return Chirp{}, ErrNotExist
 	}
 
-	return user, nil
+	return chirp, nil
 }
